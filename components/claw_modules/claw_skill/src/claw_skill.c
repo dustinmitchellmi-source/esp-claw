@@ -20,7 +20,7 @@ static const char *TAG = "claw_skill";
 static const char *SKILLS_LIST_FILE = "skills_list.json";
 
 #define CLAW_SKILL_DEFAULT_MAX_FILES 64
-#define CLAW_SKILL_DEFAULT_MAX_BYTES 5120
+#define CLAW_SKILL_DEFAULT_MAX_BYTES 10240
 #define CLAW_SKILL_MAX_PATH          192
 
 typedef struct {

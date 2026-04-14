@@ -51,19 +51,11 @@ Use this skill when the user needs to inspect or change event router automation 
 
 ## Examples
 
-Add one schedule rule: when `event_key=drink_reminder`, send QQ message.
+Add one router rule for schedule published event: when `event_key=drink_reminder`, send QQ message.
 
 ```json
 {
-  "rule_json": "{\"id\":\"drink_reminder_qq\",\"description\":\"Send drink reminder to QQ\",\"enabled\":true,\"consume_on_match\":true,\"match\":{\"event_type\":\"schedule\",\"event_key\":\"drink_reminder\"},\"actions\":[{\"type\":\"send_message\",\"input\":{\"channel\":\"qq\",\"chat_id\":\"c2c:D49D721C39B08F751706A40AB8BEA53D\",\"message\":\"该喝水了！\"}}]}"
-}
-```
-
-Add one message rule (match all text messages, then send reply):
-
-```json
-{
-  "rule_json": "{\"id\":\"im_text_echo\",\"description\":\"Reply to text messages\",\"match\":{\"event_type\":\"message\",\"event_key\":\"text\",\"content_type\":\"text\"},\"actions\":[{\"type\":\"send_message\",\"input\":{\"channel\":\"{{event.source_channel}}\",\"chat_id\":\"{{event.chat_id}}\",\"message\":\"收到：{{event.text}}\"}}]}"
+  "rule_json": "{\"id\":\"drink_reminder_qq\",\"description\":\"Send drink reminder to QQ\",\"enabled\":true,\"consume_on_match\":true,\"match\":{\"event_type\":\"schedule\",\"event_key\":\"drink_reminder\"},\"actions\":[{\"type\":\"send_message\",\"input\":{\"channel\":\"qq\",\"chat_id\":\"a_certain_QQ_chat_ID\",\"message\":\"It's time to drink water!\"}}]}"
 }
 ```
 
