@@ -633,7 +633,6 @@ static esp_err_t cap_scheduler_load_from_disk_locked(void)
         return err;
     }
 
-    
     for (size_t i = 0; i < s_cap_scheduler.max_items; i++) {
         if (!s_cap_scheduler.entries[i].occupied) {
             continue;
@@ -765,8 +764,14 @@ esp_err_t cap_scheduler_register_group(void)
 
 esp_err_t cap_scheduler_init(const cap_scheduler_config_t *config)
 {
+    const char *schedules_path = NULL;
+    const char *state_path = NULL;
+
     if (s_cap_scheduler.initialized) {
         return ESP_ERR_INVALID_STATE;
+    }
+    if (!config || !config->schedules_path || !config->schedules_path[0] || !config->state_path || !config->state_path[0]) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (!s_cap_scheduler.mutex) {
@@ -792,12 +797,10 @@ esp_err_t cap_scheduler_init(const cap_scheduler_config_t *config)
     s_cap_scheduler.config.task_core = config ? config->task_core : tskNO_AFFINITY;
     s_cap_scheduler.config.persist_after_fire = true;
 
-    strlcpy(s_cap_scheduler.schedules_path,
-            config && config->schedules_path ? config->schedules_path : CAP_SCHEDULER_DEFAULT_SCHEDULES_PATH,
-            sizeof(s_cap_scheduler.schedules_path));
-    strlcpy(s_cap_scheduler.state_path,
-            config && config->state_path ? config->state_path : CAP_SCHEDULER_DEFAULT_STATE_PATH,
-            sizeof(s_cap_scheduler.state_path));
+    schedules_path = config->schedules_path;
+    state_path = config->state_path;
+    strlcpy(s_cap_scheduler.schedules_path, schedules_path, sizeof(s_cap_scheduler.schedules_path));
+    strlcpy(s_cap_scheduler.state_path, state_path, sizeof(s_cap_scheduler.state_path));
     strlcpy(s_cap_scheduler.default_timezone,
             config && config->default_timezone ? config->default_timezone : CAP_SCHEDULER_DEFAULT_TIMEZONE,
             sizeof(s_cap_scheduler.default_timezone));

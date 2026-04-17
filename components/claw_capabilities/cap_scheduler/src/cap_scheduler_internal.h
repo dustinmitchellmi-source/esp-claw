@@ -15,8 +15,6 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
-#define CAP_SCHEDULER_DEFAULT_SCHEDULES_PATH "/fatfs/data/scheduler/schedules.json"
-#define CAP_SCHEDULER_DEFAULT_STATE_PATH     "/fatfs/data/scheduler/scheduler_state.json"
 #define CAP_SCHEDULER_STATE_TMP_SUFFIX       ".tmp"
 #define CAP_SCHEDULER_STATE_BACKUP_SUFFIX    ".bak"
 #define CAP_SCHEDULER_PATH_BUF_LEN           224
