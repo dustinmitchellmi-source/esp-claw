@@ -125,3 +125,6 @@ dependencies:
 
   lua_module_storage:
     path: ../../../components/lua_modules/lua_module_storage
+
+  lua_module_system:
+    path: ../../../components/lua_modules/lua_module_system
