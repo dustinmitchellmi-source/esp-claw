@@ -4,7 +4,7 @@ This skill describes how to call registered capabilities directly from Lua.
 
 ## How to call
 - Import it with `local capability = require("capability")`
-- Main API: `ok, out, err = capability.call(name, payload[, opts])`
+- Main API: `ok, out, err = capability.call(name, payload[, opts])`. ALWAYS follow the 3-element pattern, `ok, out, err`, to receive the result, for example `local ok, xxx_out, err = capability.call("xxx", ...)`.
 - `name` must match the real registered capability id, for example `qq_send_message`, `qq_send_image`, or `qq_send_file`.
 
 ## API
@@ -34,22 +34,26 @@ If an `opts` field is missing, the module tries to inherit the same field from g
 
 ## IM capability mapping
 - QQ text/image/file:
-  - `qq_send_message` with `message`
-  - `qq_send_image` with `path` and optional `caption`
-  - `qq_send_file` with `path` and optional `caption`
+  - `qq_send_message` with required `chat_id` and `message`
+  - `qq_send_image` with required `chat_id`, `path`, and optional `caption`
+  - `qq_send_file` with required `chat_id`, `path`, and optional `caption`
 - Telegram text/image/file:
-  - `tg_send_message` with `message`
-  - `tg_send_image` with `path` and optional `caption`
-  - `tg_send_file` with `path` and optional `caption`
+  - `tg_send_message` with required `chat_id` and `message`
+  - `tg_send_image` with required `chat_id`, `path`, and optional `caption`
+  - `tg_send_file` with required `chat_id`, `path`, and optional `caption`
 - WeChat text/image:
   - `wechat_send_message` with `message`
   - `wechat_send_image` with `path` and optional `caption`
-- `qq` and `tg` can inherit `chat_id` from `opts` or global `args` when the runtime context already has it.
-- `wechat` should always pass `chat_id` explicitly in `payload`.
+- Always pass `chat_id` explicitly for `qq`, `tg`, and `wechat` calls.
+- Prefer putting `chat_id` in `opts` for `qq` and `tg`, and in `payload` for `wechat`.
+
+## If you want to call other generic capabilities
+- Use activate_skill to activate the needed capability and learn what is the schema of the input arguments; what is the schema of the return values.
+- Then choose the proper input arguments and call the capability with `capability.call`, and use the correct way to parse the results.
 
 ## Examples
 
-### Override inherited context explicitly
+### Send a QQ message
 ```lua
 local capability = require("capability")
 
@@ -59,19 +63,6 @@ local ok, out, err = capability.call("qq_send_message", {
   channel = "qq",
   chat_id = "c2c:123456",
   session_id = "demo-session",
-  source_cap = "lua_script"
-})
-print(ok, out, err)
-```
-
-### Use inherited QQ chat context
-```lua
-local capability = require("capability")
-
-local ok, out, err = capability.call("qq_send_message", {
-  message = "reply from lua"
-}, {
-  channel = "qq",
   source_cap = "lua_script"
 })
 print(ok, out, err)
@@ -117,7 +108,7 @@ local ok, out, err = capability.call("tg_send_message", {
 print(ok, out, err)
 ```
 
-### Reply to the current Telegram chat with inherited context
+### Send a Telegram message to another chat
 ```lua
 local capability = require("capability")
 
@@ -125,6 +116,7 @@ local ok, out, err = capability.call("tg_send_message", {
   message = "telegram reply from lua"
 }, {
   channel = "telegram",
+  chat_id = "-1009876543210",
   source_cap = "lua_script"
 })
 print(ok, out, err)
