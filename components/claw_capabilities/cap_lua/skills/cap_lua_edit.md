@@ -55,4 +55,4 @@ Implementation behavior:
 - Never busy-wait for timing. Use `delay.delay_ms(ms)` inside loops.
 - For hardware resources, open them in `run()`, release them in `cleanup()`, and wrap execution in `xpcall(run, debug.traceback)`.
 - When an API expects integers, use `math.floor(...)` or another explicit conversion.
-- If the script needs to send IM replies, prefer `ep.publish_message("text")`. Use a full table only when extra fields are truly required.
+- If the script needs to send IM replies, prefer call the corresponding IM capability directly.

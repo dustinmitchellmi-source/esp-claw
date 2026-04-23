@@ -107,6 +107,9 @@ dependencies:
   lua_module_button:
     path: ../../../components/lua_modules/lua_module_button
 
+  lua_module_call_capability:
+    path: ../../../components/lua_modules/lua_module_call_capability
+
   lua_module_camera:
     matches:
       - if: $CONFIG{ESP_BOARD_DEV_CAMERA_SUPPORT} == True
