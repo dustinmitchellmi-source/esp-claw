@@ -6,6 +6,7 @@ idf_component_register(
         "include"
     REQUIRES
         claw_cap
-        esp_http_client
+        claw_core
+        esp_netif
         console
 )

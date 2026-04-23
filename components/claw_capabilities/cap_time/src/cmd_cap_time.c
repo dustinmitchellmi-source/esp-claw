@@ -27,13 +27,13 @@ static int time_func(int argc, char **argv)
         return 1;
     }
     if (!time_args.now->count) {
-        printf("Specify '--now' to sync and print current network time\n");
+        printf("Specify '--now' to print current local time and sync with SNTP only when needed\n");
         return 1;
     }
 
-    err = cap_time_sync_now(output, sizeof(output));
+    err = cap_time_get_current(output, sizeof(output));
     if (err != ESP_OK) {
-        printf("time sync failed: %s\n", esp_err_to_name(err));
+        printf("failed to get time: %s\n", esp_err_to_name(err));
         return 1;
     }
 
@@ -43,7 +43,7 @@ static int time_func(int argc, char **argv)
 
 void register_cap_time(void)
 {
-    time_args.now = arg_lit0(NULL, "now", "Fetch current network time and sync the local clock");
+    time_args.now = arg_lit0(NULL, "now", "Print current local time and sync with SNTP only when needed");
     time_args.end = arg_end(2);
 
     const esp_console_cmd_t time_cmd = {

@@ -3,45 +3,33 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "cap_time.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
-
-#include "claw_cap.h"
-#include "claw_task.h"
-#include "esp_check.h"
-#include "esp_crt_bundle.h"
-#include "esp_http_client.h"
-#include "esp_log.h"
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "esp_check.h"
+#include "esp_log.h"
+#include "esp_netif_sntp.h"
+#include "claw_cap.h"
+#include "claw_task.h"
+#include "cap_time.h"
+
 
 static const char *TAG = "cap_time";
 
-#define CAP_TIME_SOURCE_URL     "https://api.telegram.org/"
-#define CAP_TIME_HTTP_TIMEOUT_MS 10000
+#define CAP_TIME_SNTP_PRIMARY_SERVER "pool.ntp.org"
+#define CAP_TIME_SNTP_SECONDARY_SERVER "time.windows.com"
+#define CAP_TIME_SNTP_WAIT_MS 3000
+#define CAP_TIME_SNTP_RETRY_COUNT 15
 #define CAP_TIME_MIN_VALID_EPOCH 1704067200
-#define CAP_TIME_UTC_TIMEZONE "UTC0"
 #define CAP_TIME_DEFAULT_DISCONNECTED_RETRY_MS 5000
 #define CAP_TIME_DEFAULT_SYNC_RETRY_MS        30000
 
-static const char *s_month_names[] = {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-};
-
-typedef struct {
-    char date_header[64];
-} cap_time_state_t;
-
-static cap_time_state_t s_time = {0};
 static SemaphoreHandle_t s_time_mutex = NULL;
 static struct {
     TaskHandle_t task_handle;
@@ -55,23 +43,6 @@ static esp_err_t cap_time_ensure_mutex(void)
         s_time_mutex = xSemaphoreCreateMutex();
     }
     return s_time_mutex ? ESP_OK : ESP_ERR_NO_MEM;
-}
-
-static int cap_time_month_to_index(const char *month)
-{
-    size_t i;
-
-    if (!month) {
-        return -1;
-    }
-
-    for (i = 0; i < sizeof(s_month_names) / sizeof(s_month_names[0]); i++) {
-        if (strcmp(month, s_month_names[i]) == 0) {
-            return (int)i;
-        }
-    }
-
-    return -1;
 }
 
 static esp_err_t cap_time_read_timezone(char *timezone, size_t timezone_size)
@@ -91,140 +62,170 @@ static esp_err_t cap_time_read_timezone(char *timezone, size_t timezone_size)
     return ESP_ERR_INVALID_STATE;
 }
 
-static bool cap_time_parse_and_set_clock(const char *date_header,
-                                         char *output,
-                                         size_t output_size)
+static void cap_time_sync_notification_cb(struct timeval *tv)
 {
-    int day = 0;
-    int year = 0;
-    int hour = 0;
-    int minute = 0;
-    int second = 0;
-    int month = -1;
-    char month_name[4] = {0};
-    struct tm utc_tm = {0};
-    struct timeval tv = {0};
-    struct tm local_tm = {0};
-    char local_tz[64] = {0};
-    bool ok = false;
-    time_t epoch;
-
-    if (!date_header || !output || output_size == 0) {
-        return false;
-    }
-
-    if (sscanf(date_header,
-               "%*[^,], %d %3s %d %d:%d:%d",
-               &day,
-               month_name,
-               &year,
-               &hour,
-               &minute,
-               &second) != 6) {
-        return false;
-    }
-
-    month = cap_time_month_to_index(month_name);
-    if (month < 0) {
-        return false;
-    }
-
-    utc_tm.tm_mday = day;
-    utc_tm.tm_mon = month;
-    utc_tm.tm_year = year - 1900;
-    utc_tm.tm_hour = hour;
-    utc_tm.tm_min = minute;
-    utc_tm.tm_sec = second;
-
-    if (cap_time_read_timezone(local_tz, sizeof(local_tz)) != ESP_OK) {
-        return false;
-    }
-
-    if (setenv("TZ", CAP_TIME_UTC_TIMEZONE, 1) != 0) {
-        return false;
-    }
-    tzset();
-    epoch = mktime(&utc_tm);
-    if (epoch < 0) {
-        goto done;
-    }
-
-    tv.tv_sec = epoch;
-    if (settimeofday(&tv, NULL) != 0) {
-        goto done;
-    }
-
-    setenv("TZ", local_tz, 1);
-    tzset();
-    localtime_r(&epoch, &local_tm);
-    if (strftime(output, output_size, "%Y-%m-%d %H:%M:%S %Z (%A)", &local_tm) == 0) {
-        goto done;
-    }
-
-    ok = true;
-
-done:
-    setenv("TZ", local_tz, 1);
-    tzset();
-    return ok;
+    (void)tv;
+    ESP_LOGI(TAG, "SNTP time synchronization event received");
 }
 
-static esp_err_t cap_time_http_event_handler(esp_http_client_event_t *event)
+static esp_err_t cap_time_build_prompt_block(char *output, size_t output_size)
 {
-    if (!event || !event->user_data) {
-        return ESP_OK;
+    time_t now = 0;
+    struct tm local_tm = {0};
+    struct timeval tv = {0};
+    char formatted_time[64] = {0};
+    int written;
+    bool time_valid;
+
+    if (!output || output_size == 0) {
+        return ESP_ERR_INVALID_ARG;
     }
 
-    if (event->event_id == HTTP_EVENT_ON_HEADER &&
-            event->header_key &&
-            event->header_value &&
-            strcasecmp(event->header_key, "Date") == 0) {
-        cap_time_state_t *state = (cap_time_state_t *)event->user_data;
+    time(&now);
+    gettimeofday(&tv, NULL);
+    time_valid = cap_time_is_valid();
+    if (time_valid) {
+        if (!localtime_r(&now, &local_tm)) {
+            return ESP_FAIL;
+        }
+        if (strftime(formatted_time, sizeof(formatted_time), "%Y-%m-%d %H:%M:%S %Z (%A)", &local_tm) == 0) {
+            return ESP_ERR_INVALID_SIZE;
+        }
+    } else {
+        strlcpy(formatted_time, "(invalid)", sizeof(formatted_time));
+    }
 
-        strlcpy(state->date_header, event->header_value, sizeof(state->date_header));
+    written = snprintf(output, output_size,
+                       "- current_local_time: %s\n"
+                       "- unix_timestamp: %lld\n"
+                       "- note: Use this device time context for relative date reasoning such as today, tomorrow, tonight, and next week.",
+                       formatted_time, (long long)tv.tv_sec);
+    if (written < 0 || (size_t)written >= output_size) {
+        return ESP_ERR_INVALID_SIZE;
     }
 
     return ESP_OK;
 }
 
-static esp_err_t cap_time_fetch_current(char *output, size_t output_size)
+static esp_err_t cap_time_format_current_time(char *output, size_t output_size)
 {
-    esp_http_client_config_t config = {
-        .url = CAP_TIME_SOURCE_URL,
-        .method = HTTP_METHOD_HEAD,
-        .timeout_ms = CAP_TIME_HTTP_TIMEOUT_MS,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-        .event_handler = cap_time_http_event_handler,
-        .user_data = &s_time,
-    };
-    esp_http_client_handle_t client = NULL;
+    time_t now = 0;
+    struct tm local_tm = {0};
+
+    if (!output || output_size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    time(&now);
+    if (now < CAP_TIME_MIN_VALID_EPOCH) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (!localtime_r(&now, &local_tm)) {
+        return ESP_FAIL;
+    }
+    if (strftime(output, output_size, "%Y-%m-%d %H:%M:%S %Z (%A)", &local_tm) == 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t cap_time_sync_with_sntp(char *output, size_t output_size)
+{
+    esp_err_t err = ESP_OK;
+    esp_err_t wait_err = ESP_OK;
+    int retry = 0;
+#if CONFIG_LWIP_SNTP_MAX_SERVERS > 1
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG_MULTIPLE(
+        2,
+        ESP_SNTP_SERVER_LIST(CAP_TIME_SNTP_PRIMARY_SERVER, CAP_TIME_SNTP_SECONDARY_SERVER)
+    );
+#else
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(CAP_TIME_SNTP_PRIMARY_SERVER);
+#endif
+
+    if (!output || output_size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    config.sync_cb = cap_time_sync_notification_cb;
+    err = esp_netif_sntp_init(&config);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    while ((wait_err = esp_netif_sntp_sync_wait(pdMS_TO_TICKS(CAP_TIME_SNTP_WAIT_MS))) == ESP_ERR_TIMEOUT &&
+           ++retry < CAP_TIME_SNTP_RETRY_COUNT) {
+        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, CAP_TIME_SNTP_RETRY_COUNT);
+    }
+
+    if (wait_err != ESP_OK) {
+        err = wait_err;
+        goto done;
+    }
+
+    err = cap_time_format_current_time(output, output_size);
+
+done:
+    esp_netif_sntp_deinit();
+    if (err == ESP_OK) {
+        return ESP_OK;
+    }
+
+    return err;
+}
+
+static esp_err_t cap_time_context_collect(const claw_core_request_t *request, claw_core_context_t *out_context, void *user_ctx)
+{
+    char *content = NULL;
+    esp_err_t err;
+    const size_t content_size = 384;
+
+    (void)request;
+    (void)user_ctx;
+
+    if (!out_context) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memset(out_context, 0, sizeof(*out_context));
+
+    content = calloc(1, content_size);
+    if (!content) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    err = cap_time_ensure_mutex();
+    if (err != ESP_OK) {
+        free(content);
+        ESP_LOGE(TAG, "Failed to create time mutex");
+        return err;
+    }
+    xSemaphoreTake(s_time_mutex, portMAX_DELAY);
+    err = cap_time_build_prompt_block(content, content_size);
+    xSemaphoreGive(s_time_mutex);
+    if (err != ESP_OK) {
+        free(content);
+        return err;
+    }
+
+    out_context->kind = CLAW_CORE_CONTEXT_KIND_SYSTEM_PROMPT;
+    out_context->content = content;
+    return ESP_OK;
+}
+
+esp_err_t cap_time_get_current(char *output, size_t output_size)
+{
     esp_err_t err;
 
     if (!output || output_size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    s_time.date_header[0] = '\0';
-    client = esp_http_client_init(&config);
-    if (!client) {
-        return ESP_FAIL;
-    }
-
-    err = esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    if (s_time.date_header[0] == '\0') {
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    if (!cap_time_parse_and_set_clock(s_time.date_header, output, output_size)) {
-        return ESP_FAIL;
-    }
-
-    return ESP_OK;
+    ESP_RETURN_ON_ERROR(cap_time_ensure_mutex(), TAG, "Failed to create time mutex");
+    xSemaphoreTake(s_time_mutex, portMAX_DELAY);
+    err = cap_time_is_valid() ? cap_time_format_current_time(output, output_size) : cap_time_sync_with_sntp(output, output_size);
+    xSemaphoreGive(s_time_mutex);
+    return err;
 }
 
 esp_err_t cap_time_sync_now(char *output, size_t output_size)
@@ -236,7 +237,7 @@ esp_err_t cap_time_sync_now(char *output, size_t output_size)
     }
     ESP_RETURN_ON_ERROR(cap_time_ensure_mutex(), TAG, "Failed to create time mutex");
     xSemaphoreTake(s_time_mutex, portMAX_DELAY);
-    err = cap_time_fetch_current(output, output_size);
+    err = cap_time_sync_with_sntp(output, output_size);
     xSemaphoreGive(s_time_mutex);
     return err;
 }
@@ -275,8 +276,7 @@ static bool cap_time_network_ready(void)
 static void cap_time_notify_sync_success(bool had_valid_time)
 {
     if (s_time_service.config.on_sync_success) {
-        s_time_service.config.on_sync_success(had_valid_time,
-                                              s_time_service.config.on_sync_success_ctx);
+        s_time_service.config.on_sync_success(had_valid_time, s_time_service.config.on_sync_success_ctx);
     }
 }
 
@@ -324,10 +324,7 @@ static void cap_time_sync_service_task(void *arg)
     claw_task_delete(NULL);
 }
 
-static esp_err_t cap_time_execute(const char *input_json,
-                                  const claw_cap_call_context_t *ctx,
-                                  char *output,
-                                  size_t output_size)
+static esp_err_t cap_time_execute(const char *input_json, const claw_cap_call_context_t *ctx, char *output, size_t output_size)
 {
     esp_err_t err;
 
@@ -338,14 +335,14 @@ static esp_err_t cap_time_execute(const char *input_json,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = cap_time_sync_now(output, output_size);
+    err = cap_time_get_current(output, output_size);
     if (err != ESP_OK) {
-        snprintf(output, output_size, "Error: failed to fetch time (%s)", esp_err_to_name(err));
+        snprintf(output, output_size, "Error: failed to get time (%s)", esp_err_to_name(err));
         ESP_LOGE(TAG, "%s", output);
         return err;
     }
 
-    ESP_LOGI(TAG, "Time synced: %s", output);
+    ESP_LOGI(TAG, "Current time: %s", output);
     return ESP_OK;
 }
 
@@ -354,7 +351,7 @@ static const claw_cap_descriptor_t s_time_descriptors[] = {
         .id = "get_current_time",
         .name = "get_current_time",
         .family = "system",
-        .description = "Fetch current network time, update the local clock, and return formatted local time.",
+        .description = "Return formatted current local time",
         .kind = CLAW_CAP_KIND_CALLABLE,
         .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM,
         .input_schema_json = "{\"type\":\"object\",\"properties\":{}}",
@@ -410,10 +407,7 @@ esp_err_t cap_time_sync_service_start(const cap_time_sync_service_config_t *conf
                               .priority = 5,
                               .core_id = tskNO_AFFINITY,
                               .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
-                          },
-                          cap_time_sync_service_task,
-                          NULL,
-                          &s_time_service.task_handle);
+                          }, cap_time_sync_service_task, NULL, &s_time_service.task_handle);
     if (ok != pdPASS || !s_time_service.task_handle) {
         s_time_service.running = false;
         s_time_service.task_handle = NULL;
@@ -437,3 +431,9 @@ esp_err_t cap_time_sync_service_stop(void)
     }
     return ESP_OK;
 }
+
+const claw_core_context_provider_t cap_time_context_provider = {
+    .name = "Time Context",
+    .collect = cap_time_context_collect,
+    .user_ctx = NULL,
+};
