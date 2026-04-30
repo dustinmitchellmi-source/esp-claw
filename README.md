@@ -1,3 +1,7 @@
+The purpose of this fork is to leverage the framework to operate on the ESP32-S3-TOUCH-AMOLED-1.75" dev board from Waveshare.
+Once I have my first build I will share for others :)
+
+
 # ESP-Claw: An AI Agent Framework for IoT Devices
 
 <div align="center">
