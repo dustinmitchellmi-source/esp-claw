@@ -158,8 +158,8 @@ scale deployment."
 
 ## Piper TTS server — setup and operational notes
 
-**Location:** `C:\piper-server\` (same home server as Whisper, RTX 3090,
-reachable at `http://192.168.1.17:5000`)
+**Location:** `C:\piper-server\` (same home server as Whisper,
+reachable at `http://<home-server-ip>:5000`)
 
 **Confirmed working setup (as of this session):**
 - Required **Python 3.12+** — `piper-tts` 1.4.2 (current as of this session)
@@ -191,7 +191,7 @@ reachable at `http://192.168.1.17:5000`)
   * Serving Flask app 'http_server'
   * Running on all addresses (0.0.0.0)
   * Running on http://127.0.0.1:5000
-  * Running on http://192.168.1.17:5000
+  * Running on http://<home-server-ip>:5000
   ```
   Server binds to port 5000 by default and runs in the foreground (prompt
   does not return) — same "stays running" pattern as the Whisper uvicorn
@@ -204,7 +204,7 @@ cd C:\piper-server
 python -m piper.http_server -m en_US-lessac-medium
 ```
 Correct startup looks like real, persistent output (`Running on
-http://192.168.1.17:5000`, Flask dev server banner) and the terminal prompt
+http://<home-server-ip>:5000`, Flask dev server banner) and the terminal prompt
 does NOT return — it stays in the foreground actively serving, same
 "prompt does not come back" pattern as the Whisper uvicorn server. If the
 prompt returns immediately, the server did not start.
@@ -216,7 +216,7 @@ old install. Always confirm `(venv_new)` shows in the prompt before
 starting the server.
 
 **API usage — CONFIRMED working request format:**
-- Endpoint: `POST http://192.168.1.17:5000/` (root path, not `/v1/audio/speech`
+- Endpoint: `POST http://<home-server-ip>:5000/` (root path, not `/v1/audio/speech`
   — that path is specific to third-party Piper wrapper projects, NOT Piper's
   own built-in `piper.http_server`)
 - Body: plain JSON, e.g. `{"text":"Hello from Piper"}`
@@ -229,7 +229,7 @@ starting the server.
   to a file first, then reference it with `--data-binary "@file"`:
   ```powershell
   '{"text":"Hello from Piper"}' | Out-File -Encoding utf8 -NoNewline payload.json
-  curl.exe -X POST -o output.wav -H "Content-Type: application/json" --data-binary "@payload.json" http://192.168.1.17:5000/
+  curl.exe -X POST -o output.wav -H "Content-Type: application/json" --data-binary "@payload.json" http://<home-server-ip>:5000/
   ```
   This avoids all shell-quoting ambiguity. The same file-based pattern is
   worth reusing for any future PowerShell + curl + JSON body testing.
@@ -353,7 +353,7 @@ BEFORE running `idf.py bmgr`, not after.
 ## Whisper server — operational notes
 
 **Location:** `C:\whisper-server\` (separate machine/host from the ESP32 board,
-reachable at `http://192.168.1.17:8001`)
+reachable at `http://<home-server-ip>:8001`)
 
 **Server implementation:** `server.py` — FastAPI + `faster-whisper`
 (`WhisperModel`, model size `medium.en`, `device="cuda"`,
@@ -382,7 +382,7 @@ running a start command, the server did NOT start, regardless of exit code.
   `{"detail":[{"type":"missing","loc":["body","file"],"msg":"Field required"}]}`).
 - Test from a board/PC with curl:
   ```powershell
-  curl.exe -X POST http://192.168.1.17:8001/transcribe -F "file=@C:\path\to\recording.wav"
+  curl.exe -X POST http://<home-server-ip>:8001/transcribe -F "file=@C:\path\to\recording.wav"
   ```
 - **CONFIRMED: `.aac` files work directly against this endpoint** — no WAV
   conversion needed. Tested with a 3-second AAC recording from the new

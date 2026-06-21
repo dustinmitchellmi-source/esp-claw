@@ -117,7 +117,7 @@ Items are not in strict priority order; rough grouping by area.
 - **Status:** Fully proven on OLD repo: real microphone capture (din:10/
   dout:8 I2S pins, ES7210 3-mic TDM, gain 50.0, ~200ms settle delay to kill
   startup click) → WAV file → `curl --data-binary` style upload → Whisper
-  server (`http://192.168.1.17:8001/transcribe`) → correct transcription
+  server (`http://<home-server-ip>:8001/transcribe`) → correct transcription
   confirmed (`"This is a test to see if you can hear me."`).
 - **Not done:** Wiring the transcribed text into `claw_event_router` so the
   agent can respond. The clean entry point is
