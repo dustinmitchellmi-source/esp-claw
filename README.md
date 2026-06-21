@@ -45,6 +45,7 @@ storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
 
 ## 🎙️ Project-specific additions (in progress)
 
+- Local LLM using Ollama + qwen2.5:14b-instruct (GPU : NVIDIA 3090 24GB)
 - Local Whisper STT server integration (faster-whisper, self-hosted)
 - Local Piper TTS server integration (self-hosted)
 - Voice pipeline: mic capture → STT → agent → TTS → speaker playback
