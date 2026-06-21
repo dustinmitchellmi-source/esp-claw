@@ -43,3 +43,8 @@ docs/public/d2
 docs/dist
 docs/.astro
 docs/**/*.bin
+
+# Testing location locally
+_test scripts/
+ 
+ 
