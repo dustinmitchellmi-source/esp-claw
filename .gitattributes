@@ -1,0 +1,4 @@
+# Always keep our version of README.md during merges from upstream —
+# it's been customized for this fork and we don't want upstream's
+# README content overwriting or conflicting with it.
+README.md merge=ours
