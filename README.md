@@ -1,16 +1,6 @@
 <div align="center">
 
-  <a href="https://esp-claw.com/en/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/src/assets/logos/logo-f.svg" />
-      <source media="(prefers-color-scheme: light)" srcset="./docs/src/assets/logos/logo.svg" />
-      <img alt="ESP-Claw logo" src="./docs/src/assets/logos/logo.svg" width="50%" />
-    </picture>
-  </a>
-
-  <h1>ESP-Claw 🦞 AI Agent Framework for IoT Devices</h1>
-
-  <h3>💬 Chat as Creation · 🚀 Millisecond Response · 🧩 Smart and Extensible · 😋 Grows with You</h3>
+  <h1>ESP-Claw 🦞 — Waveshare ESP32-S3-Touch-AMOLED-1.75 Fork</h1>
 
   <p>
     <a href="https://www.espressif.com">
@@ -21,208 +11,49 @@
     </a>
   </p>
 
-  <a href="https://esp-claw.com/en/">Home</a>
-  |
-  <a href="https://esp-claw.com/en/tutorial/">Docs</a>
-  |
-  <a href="https://esp-claw.com/en/flash/">Online Flashing</a>
-  |
-  <a href="https://esp-claw.com/en/reference-project/build-from-source/">Build from Source</a>
-  |
-  <a href="./README_CN.md">简体中文</a>
-
 </div>
 
----
-
-## 🔧 This Fork: Waveshare ESP32-S3-Touch-AMOLED-1.75
-
-This is a personal fork of ESP-Claw, configured and extended for the
+This is a personal fork of [espressif/esp-claw](https://github.com/espressif/esp-claw), configured and extended for the
 **Waveshare ESP32-S3-Touch-AMOLED-1.75** board (466×466 round AMOLED touch
 display, ES8311 DAC + ES7210 dual-mic ADC, SD card via SPI).
 
-**Board-specific work:**
-- Full board port at [`application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/`](./application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/)
-- Display (CO5300 QSPI AMOLED), touch (CST9217), audio (ES8311/ES7210),
-  boot button, and SD card storage all confirmed working
-- See [`ARCHITECTURE_AND_PLAN.md`](./ARCHITECTURE_AND_PLAN.md) for current
-  status and next steps, and [`BACKLOG.md`](./BACKLOG.md) for known issues
-  and in-progress work
+ESP-Claw itself is Espressif's open-source AI agent framework for ESP32-series
+chips — for the full feature overview, demo videos, supported LLM/IM
+platforms, and official documentation, see the
+[upstream repo](https://github.com/espressif/esp-claw) and
+[esp-claw.com](https://esp-claw.com/en/). This fork does not duplicate that
+content; everything below is specific to this board and this project.
 
-**Project-specific additions (in progress):**
+---
+
+## 🔧 Board port
+
+Full board port at [`application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/`](./application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/).
+
+Confirmed working: display (CO5300 QSPI AMOLED), touch (CST9217), audio
+(ES8311 DAC + ES7210 dual-mic ADC, full duplex), boot button, and SD card
+storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
+
+## 📋 Project documentation
+
+- [`ARCHITECTURE_AND_PLAN.md`](./ARCHITECTURE_AND_PLAN.md) — current status,
+  confirmed-working subsystems, design decisions, and next steps.
+- [`BACKLOG.md`](./BACKLOG.md) — known issues, in-progress work, and
+  workflow notes (including some real gotchas hit during board bring-up).
+- [`MIGRATION_NOTES.md`](./MIGRATION_NOTES.md) — notes from porting this
+  board from an earlier esp-claw repo structure to the current one.
+
+## 🎙️ Project-specific additions (in progress)
+
 - Local Whisper STT server integration (faster-whisper, self-hosted)
 - Local Piper TTS server integration (self-hosted)
 - Voice pipeline: mic capture → STT → agent → TTS → speaker playback
 - AXP2101 power management (battery %, charge status, power button —
-  not yet implemented, see BACKLOG.md)
+  scoped, not yet implemented; see `BACKLOG.md`)
+
+## Upstream tracking
 
 This fork tracks [espressif/esp-claw](https://github.com/espressif/esp-claw)
-as `upstream` and is not intended as a contribution back to that project —
-just my own configuration and extensions for this specific hardware.
-
----
-
-**ESP-Claw** is Espressif's **Chat Coding** AI agent framework for IoT devices. It defines device behavior through conversation and completes the full loop of sensing, decision-making, and execution locally on Espressif chips. Inspired by the OpenClaw concept and reimplemented in C, ESP-Claw is lightweight, intelligent, and continuously evolving. With just an ESP32-series chip that costs only a few dollars, you can experience what makes ESP-Claw so nimble.
-
-<div align="center">
-  <img alt="From traditional IoT to Edge Agent" src="./docs/static/from-traditional-iot-to-edge-agent.webp" width="90%" />
-</div>
-
-## 🌟 Key Features
-
-Traditional IoT usually stops at connectivity: devices can connect to the network, but they cannot think; they can execute commands, but they cannot make decisions. ESP-Claw brings the Agent Runtime down onto Espressif chips, turning them from passive executors into active decision-making centers.
-
-<table align="center">
-  <tr>
-    <th><div align="center"> 💬 Chat as Creation </div></th>
-    <th><div align="center"> ⚙️ Event Driven </div></th>
-  </tr>
-  <tr>
-    <th>
-      <div align="center">
-        IM chat + dynamic Lua loading
-        <br />
-        Ordinary users can define device behavior without programming
-      </div>
-    </th>
-    <th>
-      <div align="center">
-        Any event can trigger the Agent Loop and more
-        <br />
-        Response can be as fast as milliseconds
-      </div>
-    </th>
-  </tr>
-  <tr>
-    <th width="45%">
-      <video src="https://github.com/user-attachments/assets/717a4dae-fbd3-4364-afca-2d45432f156e" />
-    </th>
-    <th width="45%">
-      <video src="https://github.com/user-attachments/assets/5a274a4a-e1dc-4c13-81aa-fb1c22d470bf" />
-    </th>
-  </tr>
-
-  <tr>
-    <td colspan="2"><!-- spacer row --></td>
-  </tr>
-
-  <tr>
-    <th><div align="center"> 🧬 Structured Memory </div></th>
-    <th><div align="center"> 📤 MCP Communication </div></th>
-  </tr>
-  <tr>
-    <th>
-      <div align="center">
-        Organize memories in a structured way
-        <br />
-        Privacy stays off the cloud
-      </div>
-    </th>
-    <th>
-      <div align="center">
-        Supports standard MCP devices
-        <br />
-        Works as both Server and Client
-      </div>
-    </th>
-  </tr>
-  <tr>
-    <th width="45%">
-      <video src="https://github.com/user-attachments/assets/2c8bcaa4-3606-49d3-9b70-86ad3234d48f" />
-    </th>
-    <th width="45%">
-      <video src="https://github.com/user-attachments/assets/b1f71cee-e428-4b92-ad7e-d7816839f866" />
-    </th>
-  </tr>
-
-  <tr>
-    <td colspan="2"><!-- spacer row --></td>
-  </tr>
-
-  <tr>
-    <th><div align="center"> 🧰 Ready Out of the Box </div></th>
-    <th><div align="center"> 🧩 Component Extensibility </div></th>
-  </tr>
-  <tr>
-    <th>
-      <div align="center">
-        Quick setup with Board Manager
-        <br />
-        Supports one-click flashing
-      </div>
-    </th>
-    <th>
-      <div align="center">
-        Every module can be trimmed as needed
-        <br />
-        You can also add your own component integrations
-      </div>
-    </th>
-  </tr>
-</table>
-
-## 📦 Quick Start
-
-<div align="center">
-  <img src="docs/src/assets/images/claw-breadboard-photo.jpg" width="80%" alt="ESP-Claw on ESP32-S3 Breadboard" />
-</div>
-
-ESP-Claw now supports a wide range of development boards based on ESP32-S3, ESP32-P4, ESP32-C5, and ESP32-S31, including breadboards, M5Stack CoreS3, and many others. Supported boards in [`./application/edge_agent/boards/`](./application/edge_agent/boards/) can be flashed online directly: configuration and flashing are done entirely in the browser, with no need to compile firmware locally or install a development environment first.
-
-<div align="center">
-  <a href="https://esp-claw.com/en/flash/">
-    <img src="./docs/static/flash-via-browser-button.svg" width="200" />
-  </a>
-</div>
-
-You can also build ESP-Claw locally. Please refer to the [local build documentation](https://esp-claw.com/en/tutorial/) for board adaptation, building, and flashing. Boards not listed above, as well as chips like the ESP32-P4, can also be supported through local builds and flashing.
-
-You can find practical examples in our [documentation](https://esp-claw.com/en/tutorial/).
-
-### Supported Platforms
-
-<div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/static/claw-providers-white.webp" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/static/claw-providers-black.webp" />
-    <img alt="Supported Platforms" src="./docs/static/claw-providers-black.webp" width="90%" />
-  </picture>
-</div>
-
-**LLM**: ESP-Claw now supports both OpenAI-style APIs and Anthropic-style APIs. It natively supports GPT models from OpenAI, Qwen models from Alibaba Cloud Bailian, Claude models from Anthropic, DeepSeek models from DeepSeek API, and also supports custom endpoints.
-
-> [!TIP]
->
-> ESP-Claw's self-programming capability depends on models with strong tool use and instruction-following ability. We recommend `gpt-5.4`, `qwen3.6-plus`, `claude4.6-sonnet`, `deepseek-v4-pro` or models with comparable capability.
-
-**IM**: ESP-Claw supports Telegram, QQ, Feishu, and WeChat, and can be extended further.
-
-## Development Plan
-
-ESP-Claw is still under active development. Feel free to open an issue to report problems or request features. You can also share your ideas through our [online survey (in Chinese)](https://fcn5wbhnyubf.feishu.cn/share/base/form/shrcndYcjbGFY1ymttTSyYoGIPh).
-
-[Click here to view our TODO List (in Chinese)](https://fcn5wbhnyubf.feishu.cn/wiki/SRlgwWUYei4WmykU8uMcUtzTnFf?table=tblWSgzWcyW7jv7B&view=vewaP9B0KX) and vote for the features or issues you care about. That helps us prioritize them sooner.
-
-
-
-## 📷 Follow Us
-
-If this project helps you, please consider giving it a star. ⭐⭐⭐⭐⭐
-
-### Star History
-
-<div align="center">
-  <a href="https://www.star-history.com/?repos=espressif%2Fesp-claw&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=espressif/esp-claw&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=espressif/esp-claw&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=espressif/esp-claw&type=date&legend=top-left" />
-  </picture>
-  </a>
-</div>
-
-## Acknowledgements
-
-Inspired by [OpenClaw](https://github.com/openclaw/openclaw).
-
-The implementation of Agent Loop, IM communication, and related capabilities on ESP32 also draws on [MimiClaw](https://github.com/memovai/mimiclaw).
+as `upstream` (not `origin`) and is not intended as a contribution back to
+that project. `README.md` is excluded from upstream merges
+(`merge=ours` in `.gitattributes`) since it's been rewritten for this fork.
