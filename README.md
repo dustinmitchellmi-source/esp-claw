@@ -33,6 +33,35 @@
 
 </div>
 
+---
+
+## 🔧 This Fork: Waveshare ESP32-S3-Touch-AMOLED-1.75
+
+This is a personal fork of ESP-Claw, configured and extended for the
+**Waveshare ESP32-S3-Touch-AMOLED-1.75** board (466×466 round AMOLED touch
+display, ES8311 DAC + ES7210 dual-mic ADC, SD card via SPI).
+
+**Board-specific work:**
+- Full board port at [`application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/`](./application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/)
+- Display (CO5300 QSPI AMOLED), touch (CST9217), audio (ES8311/ES7210),
+  boot button, and SD card storage all confirmed working
+- See [`ARCHITECTURE_AND_PLAN.md`](./ARCHITECTURE_AND_PLAN.md) for current
+  status and next steps, and [`BACKLOG.md`](./BACKLOG.md) for known issues
+  and in-progress work
+
+**Project-specific additions (in progress):**
+- Local Whisper STT server integration (faster-whisper, self-hosted)
+- Local Piper TTS server integration (self-hosted)
+- Voice pipeline: mic capture → STT → agent → TTS → speaker playback
+- AXP2101 power management (battery %, charge status, power button —
+  not yet implemented, see BACKLOG.md)
+
+This fork tracks [espressif/esp-claw](https://github.com/espressif/esp-claw)
+as `upstream` and is not intended as a contribution back to that project —
+just my own configuration and extensions for this specific hardware.
+
+---
+
 **ESP-Claw** is Espressif's **Chat Coding** AI agent framework for IoT devices. It defines device behavior through conversation and completes the full loop of sensing, decision-making, and execution locally on Espressif chips. Inspired by the OpenClaw concept and reimplemented in C, ESP-Claw is lightweight, intelligent, and continuously evolving. With just an ESP32-series chip that costs only a few dollars, you can experience what makes ESP-Claw so nimble.
 
 <div align="center">
