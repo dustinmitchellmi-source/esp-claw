@@ -443,16 +443,146 @@ This should be designed into the STT/TTS capability wiring from the start
 (item 3 in "Suggested order of work" below), not added as an afterthought
 once storage pressure becomes a visible problem.
 
-## Whisper/voice-agent integration — architecture decision pending
+## Whisper/voice-agent integration — architecture decision RESOLVED
 
-See BACKLOG.md item 5 for full detail. Core open question: should the *Lua
-script* orchestrate (transcribe-then-publish) or should the *agent* orchestrate
-(publish "voice note exists at path X", let the LLM's tool-calling invoke a new
-`transcribe_audio` capability)? Leaning toward agent-orchestrated for
-architectural consistency with existing capabilities (`tg_send_message`,
-`inspect_image`), but not decided. Either path needs a multipart-capable HTTP
-mechanism that doesn't currently exist (`cap_http_request` only supports
-simple string bodies).
+**Resolved by `.agents/design.md`'s explicit guidance** (see "Repo's own
+agent guidance" section above): *"Prefer skills for model know-how and
+workflows; prefer capabilities for callable firmware functions."*
+
+This settles BACKLOG.md item 5's open question in favor of
+**agent-orchestrated**, not Lua-orchestrated: build `transcribe_audio` as a
+genuine capability (callable firmware function, registered through
+`app_capabilities.c`, same shape as `inspect_image`/`tg_send_message`),
+with a companion `SKILL.md` providing the agent guidance on when/how to use
+it. Do NOT build this as a Lua script that decides upfront to transcribe
+and then publishes text — let the agent's own tool-calling invoke the
+capability when it determines a voice note needs transcribing.
+
+Still needs deciding: the actual multipart-upload mechanism for getting the
+WAV/AAC file to the Whisper server (custom C capability with hand-rolled
+multipart, mirroring `cap_im_tg.c`'s `cap_im_tg_send_multipart_file()`, vs.
+extending `claw_core_llm_infer_media`'s media-kind abstraction to support
+audio natively). This is an implementation detail orthogonal to the
+capability-vs-skill question above, which is now resolved.
+
+## Repo's own agent guidance — AGENTS.md (found, not yet fully explored)
+
+The repo ships its own `AGENTS.md` at the root, written specifically as
+guidance for AI agents (like this one) working in this codebase. Worth
+reading in full at the start of future sessions rather than re-deriving
+things we've already painfully discovered by hand.
+
+**Confirms what we already found independently:** `claw_paths`/
+`CLAW_PATH_DATA` resolving to `/fatfs` or the SD card mount point exactly
+matches what we reverse-engineered from `app_fs.c`.
+
+**New, not yet explored — worth reading next session:**
+**`.agents/gotchas.md` — now read, contents captured here:**
+1. **Capability/Lua module selection is config-driven, not automatic.**
+   Enabled capability groups, LLM-visible groups, and enabled Lua modules
+   come from app configuration. Empty selections usually mean "use
+   defaults" or "enable available modules"; unknown tokens are ignored
+   with warnings. When adding a new capability group or Lua module, must
+   update the app registration table AND the relevant Kconfig/default
+   config path — dropping in the C files alone won't make it show up.
+   Directly relevant to any future `transcribe_audio`-style capability.
+2. **`components/lua_modules/lua_driver_xxx/README.md` files are
+   agent-facing, not user-facing.** They're meant to be read as operating
+   instructions for an agent calling the Lua driver, not marketing copy or
+   a full developer manual. Keep them concise and capability-oriented.
+   Relevant if we ever write a custom Lua module for the voice pipeline.
+
+(Shorter than expected — only two gotchas as of this read. Neither was hit
+during this session's work, but both are directly relevant to the upcoming
+Whisper/Piper capability wiring.)
+**`.agents/design.md` — now read, contents captured here:**
+1. **Keep `claw_core` (the agent loop) small.** It's the critical runtime
+   path (context building, LLM calls, capability execution, persistence,
+   interrupts, responses). Changes here should be narrow and justified —
+   if a behavior can live in a capability, Lua module, skill, router rule,
+   board overlay, or context provider instead, it belongs there, not in
+   core.
+2. **Capabilities vs. skills — the actual distinction that resolves our
+   open architecture question (BACKLOG.md item 5):** "Prefer skills for
+   model know-how and workflows; prefer capabilities for callable firmware
+   functions." This means a future `transcribe_audio` mechanism should be
+   built as a genuine **capability** (callable firmware function, same
+   shape as `inspect_image`/`tg_send_message`), registered through
+   `app_capabilities.c` — NOT as Lua-orchestrated glue script. Any guidance
+   for the agent on *when/how* to use it (e.g. "call this when a voice note
+   exists") belongs in a companion `SKILL.md`, not baked into the
+   capability's logic itself. This effectively settles the "Lua-orchestrated
+   vs. agent-orchestrated" debate in BACKLOG.md item 5 in favor of the
+   agent-orchestrated capability approach already being leaned toward.
+3. **Don't add board-specific assumptions to generic Lua modules.**
+   Board-specific setup (pins, gain values, etc.) belongs in the board
+   directory or board manager YAML, not hardcoded into a reusable Lua
+   module. Relevant if we write Lua glue code for the voice pipeline.
+4. **Filesystem layering, confirmed again:** SYSTEM staging gets the base
+   `fatfs_image/system/` tree, then the board's own `fatfs_image/` overlay
+   (if present) is copied on top, then skills/builtin Lua scripts are
+   synced in. Board overlays only ever target SYSTEM, never DATA. Edit
+   source FATFS content or board overlays — never generated staged output
+   under `build/`.
+
+**`.agents/spec/claw-skill-spec.md` — now read. Key rules for the future
+`transcribe_audio` skill doc:**
+- `SKILL.md` needs JSON frontmatter (`name`, `description`, `metadata`)
+  wrapped in `---`, then exactly one H1 heading. `name` must exactly match
+  the parent directory name.
+- `description` must describe *user intent*, not implementation — e.g.
+  focus on "transcribe what was said in a voice recording" wording, not
+  internal function/script names. This affects skill matching directly.
+- `metadata.cap_groups` declares which capability groups the skill needs
+  activated (would list whatever group `transcribe_audio` belongs to).
+- `metadata.category` is required (at least one value from an allowlist —
+  haven't seen the actual allowlist yet, need to check at implementation
+  time) and `metadata.peripherals` is optional (same allowlist caveat).
+- Use `{CUR_SKILL_DIR}` placeholder for any bundled scripts/references —
+  never hardcode `/system/skills/...` or `/fatfs/skills/...` paths.
+- Skill id (directory name) must be globally unique across the whole
+  project and stable once chosen.
+
+**`.agents/spec/lua-module-spec.md` — now read. Relevant if we end up
+writing Lua glue (vs. pure C capability) for any part of the voice
+pipeline:**
+- Two naming conventions: `lua_driver_xx` (low-level hardware drivers) vs.
+  `lua_module_xx` (higher-level modules). A Whisper/Piper HTTP glue module
+  would be `lua_module_xx`, not `lua_driver_xx`.
+- `README.md` is REQUIRED and is the actual API contract — must document
+  every real API, arguments, return values, error behavior, cleanup
+  requirements, and concurrency/blocking behavior. Must NOT document
+  planned/unimplemented functions (so this gets written incrementally,
+  matching actual implementation, not speculatively).
+- Optional `skills/`, `test/`, `lib/`, `src/` subdirectories — `test/`
+  scripts must be self-contained and include cleanup logic for any
+  hardware resources opened.
+- `src/` C bindings must register ONLY the Lua APIs actually documented in
+  `README.md` — no undocumented surface area.
+
+**Practical takeaway for next session:** before writing `transcribe_audio`,
+check the actual `category`/`peripherals` allowlists referenced in
+claw-skill-spec.md (likely defined somewhere in `claw_skill`'s source or a
+schema file) so the `SKILL.md` frontmatter validates correctly on the first
+attempt rather than guessing at allowed values.
+
+**Path/storage convention to follow in our own future code (per AGENTS.md):**
+> "Never hard-code `/fatfs` for writable paths in reusable code or docs. Use
+> `claw_paths_join(CLAW_PATH_DATA, ...)` in C and `storage.get_root_dir()`
+> plus `storage.join_path(...)` in Lua."
+
+Any custom Lua scripts or C capabilities we write going forward (especially
+for the Whisper/Piper voice pipeline) should follow this — since this board
+can run with or without the SD card present, hardcoding `/fatfs/` or
+`/sdcard/` directly would break on whichever storage path isn't currently
+active.
+
+**Code style conventions worth following for any new C capabilities** (e.g.
+a future `transcribe_audio` capability): opaque handle pattern
+(`xxx_handle_t`), `xxx_create/delete/start/stop/read/write/set/get` naming,
+`esp_err_t` return type, config struct + output handle pointer pattern,
+`xxx_ops_t` function pointer tables for polymorphism. Full style guide is in
+`AGENTS.md` itself under "Code Style" and "Memory Allocation and Release."
 
 ## Suggested order of work for next session
 
