@@ -1,0 +1,111 @@
+peripherals:
+
+  # ── QSPI bus for CO5300 AMOLED display ────────────────────────────────────
+  # The CO5300 uses a 4-wire QSPI data bus + separate clock.
+  # Board Manager's "spi" peripheral type drives a single-wire SPI bus, so
+  # the QSPI init is handled in setup_device.c via esp_lcd_new_panel_io_spi()
+  # with flags.sio_mode = false and 4 data IOs.  This peripheral entry is
+  # declared so the device YAML can reference it by name; the actual pin
+  # binding happens in the factory function.
+  - name: spi_lcd_qspi
+    type: spi
+    config:
+      spi_bus_config:
+        spi_port: SPI2_HOST
+        mosi_io_num: 4          # QSPI SIO0
+        miso_io_num: 5          # QSPI SI1  (quad line 1)
+        quadwp_io_num: 6        # QSPI SI2  (quad line 2 / WP)
+        quadhd_io_num: 7        # QSPI SI3  (quad line 3 / HD)        
+        sclk_io_num: 38         # QSPI SCL  (clock)
+        max_transfer_sz: 65536
+        flags: 0                # SPICOMMON_BUSFLAG_GPIO_PINS is (1<<21) = 2097152, 
+                                # combined with SPICOMMON_BUSFLAG_QUAD (1<<22) = 4194304, total = 6291456. Reset back to 0
+
+  # ── I2C master ─────────────────────────────────────────────────────────────
+  # Shared by: CST9217 touch, QMI8658 IMU, PCF85063 RTC, AXP2101 PMU,
+  #            TCA9554/EXIO expander, GPS module
+  - name: i2c_master
+    type: i2c
+    role: master
+    config:
+      port: 0
+      pins:
+        sda: 15                 # GPIO15 — TP SDA / ESP32 SDA (confirmed)
+        scl: 14                 # GPIO14 — TP SCL / ESP32 SCL (confirmed)
+
+
+# ── I2S full-duplex — ES8311 DAC (out) + ES7210 dual-mic (in) ────────────
+# ── I2S output — ES8311 DAC → speaker (via PA on GPIO46) ──────────────────
+  - name: i2s_audio_out
+    type: i2s
+    role: master
+    format: std-out
+    config: &i2s_config
+      port: 0
+      sample_rate_hz: 16000
+      data_bit_width: 16
+      slot_mode: I2S_SLOT_MODE_MONO
+      pins:
+        mclk: 42
+        bclk: 9
+        ws: 45
+        dout: 8 #prev 10 was wrong
+        din: 10 #prev 8 was wrong
+  - name: i2s_audio_in
+    type: i2s
+    role: master
+    format: std-in
+    config: *i2s_config 
+
+  # ── Speaker PA control GPIO ─────────────────────────────────────────────────
+  - name: gpio_pa_control
+    type: gpio
+    role: io
+    config:
+      pin: 46                   # GPIO46 — PA CTRL (confirmed)
+      mode: GPIO_MODE_OUTPUT
+
+  # ── LCD hard-reset GPIO ────────────────────────────────────────────────────
+  - name: gpio_lcd_reset
+    type: gpio
+    role: io
+    config:
+      pin: 39                   # GPIO39 — LCD RESET (confirmed)
+      mode: GPIO_MODE_OUTPUT
+
+  # ── Touch controller reset + interrupt GPIOs ───────────────────────────────
+  - name: gpio_tp_reset
+    type: gpio
+    role: io
+    config:
+      pin: 40                   # GPIO40 — TP RESET (confirmed)
+      mode: GPIO_MODE_OUTPUT
+
+  - name: gpio_tp_int
+    type: gpio
+    role: io
+    config:
+      pin: 11                   # GPIO11 — TP INT (confirmed)
+      mode: GPIO_MODE_INPUT
+
+  # ── SD card (SPI mode) ─────────────────────────────────────────────────────
+  - name: spi_sd
+    type: spi
+    role: master
+    config:
+      spi_bus_config:
+        spi_port: SPI3_HOST
+        mosi_io_num: 1          # GPIO1  — SD MOSI (confirmed)
+        miso_io_num: 3          # GPIO3  — SD MISO (confirmed)
+        sclk_io_num: 2          # GPIO2  — SD SCK  (confirmed)
+        quadwp_io_num: -1
+        quadhd_io_num: -1
+        max_transfer_sz: 32768 # was 4096
+
+  # ── BOOT and PWR buttons ───────────────────────────────────────────────────
+  - name: gpio_boot_button
+    type: gpio
+    role: io
+    config:
+      pin: 0                    # GPIO0 — BOOT button (standard ESP32-S3)
+      mode: GPIO_MODE_INPUT

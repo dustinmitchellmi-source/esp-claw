@@ -1,0 +1,5 @@
+board: waveshare_esp32_s3_touch_amoled_175
+chip: esp32s3
+version: 1.0.0
+description: "Waveshare ESP32-S3-TOUCH-AMOLED-1.75 - 466x466 CO5300 QSPI AMOLED, CST9217 touch, ES8311 codec, ES7210 dual-mic AEC, QMI8658 IMU, AXP2101 PMU, PCF85063 RTC"
+manufacturer: "Waveshare"
