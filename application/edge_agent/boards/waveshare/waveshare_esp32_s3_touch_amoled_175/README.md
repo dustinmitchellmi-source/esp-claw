@@ -37,8 +37,8 @@ idf.py flash monitor
 | I2S SCLK | 9 | Shared by DAC + ADC |
 | I2S LRCK | 45 | Shared by DAC + ADC |
 | I2S MCLK | 42 | ES8311 master clock — see note |
-| I2S ASDOUT | 8 | ES8311 → ESP32 (DAC monitor / ADC) | Schematic is wrong from waveshare says 10|
-| I2S DSDIN | 10 | ESP32 → ES8311 (DAC data in) | Schematic is wrong from waveshare says 8 |
+| I2S ASDOUT | 8 | ES8311 → ESP32 (DAC monitor / ADC) |
+| I2S DSDIN | 10 | ESP32 → ES8311 (DAC data in) |
 | PA CTRL | 46 | Speaker amp enable (HIGH = on) |
 | SD MOSI | 1 | |
 | SD SCK | 2 | |
@@ -53,3 +53,8 @@ idf.py flash monitor
 
 EXIO0–EXIO7 are pins on the TCA9554 I2C GPIO expander (address on the shared I2C bus):
 EXIO3 = RTC INT, EXIO4 = SYS OUT, EXIO5 = AXP IRQ, EXIO6 = QMI INT1, EXIO7 = GPS RST
+
+
+## Important
+ - I2S ASDOUT Schematic is wrong from Waveshare says 10, but is actually 8
+ - I2S DSDIN  Schematic is wrong from Waveshare says 8, but is actually 10
