@@ -40,8 +40,6 @@ storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
   confirmed-working subsystems, design decisions, and next steps.
 - [`BACKLOG.md`](./BACKLOG.md) — known issues, in-progress work, and
   workflow notes (including some real gotchas hit during board bring-up).
-- [`MIGRATION_NOTES.md`](./MIGRATION_NOTES.md) — notes from porting this
-  board from an earlier esp-claw repo structure to the current one.
 
 ## 🎙️ Project-specific additions (in progress)
 
