@@ -47,4 +47,5 @@ docs/**/*.bin
 # Testing location locally
 _test scripts/
  
+MIGRATION_NOTES.md
  
