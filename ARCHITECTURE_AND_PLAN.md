@@ -8,3 +8,5 @@
 		</picture>
 	</a>
 </div>
+
+![Current architecture](./docs/architecture-current.svg)
