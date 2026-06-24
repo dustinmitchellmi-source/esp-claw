@@ -9,4 +9,4 @@
 	</a>
 </div>
 
-![Current architecture](./docs/src/images/esp_claw_current_architecture.svg)
+![Current architecture](./docs/src/assets/images/esp_claw_current_architecture.svg)
