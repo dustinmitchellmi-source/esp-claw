@@ -44,12 +44,12 @@ storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
 
 ## 🎙️ Project-specific additions (in progress)
 
-[x] Local LLM using Ollama + qwen2.5:14b-instruct
-[ ] Voice pipeline: mic capture → STT → agent → TTS → speaker playback
-	[ ] Local Whisper STT server integration (faster-whisper, self-hosted)
-	[ ] Local Piper TTS server integration (self-hosted)
-[ ] AXP2101 power management
-[ ] User Interface to engage with the agent
+- [x] Local LLM using Ollama + qwen2.5:14b-instruct
+- [ ] Voice pipeline: mic capture → STT → agent → TTS → speaker playback
+	- [ ] Local Whisper STT server integration (faster-whisper, self-hosted)
+	- [ ] Local Piper TTS server integration (self-hosted)
+- [ ] AXP2101 power management
+- [ ] User Interface to engage with the agent
 
 ## Upstream tracking
 
