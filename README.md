@@ -1,6 +1,7 @@
 <div align="center">
 
-  <h1>ESP-Claw 🦞 — Waveshare ESP32-S3-Touch-AMOLED-1.75 Fork</h1>
+  <h1>ESP-Claw 🦞</h1>
+  <h2>Waveshare ESP32-S3-Touch-AMOLED-1.75</h2>
 
   <p>
     <a href="https://www.espressif.com">
@@ -13,7 +14,7 @@
 
 </div>
 
-This is a personal fork of [espressif/esp-claw](https://github.com/espressif/esp-claw), configured and extended for the
+This is a personal project of [espressif/esp-claw](https://github.com/espressif/esp-claw), configured and extended for the
 **Waveshare ESP32-S3-Touch-AMOLED-1.75** board (466×466 round AMOLED touch
 display, ES8311 DAC + ES7210 dual-mic ADC, SD card via SPI).
 
@@ -43,12 +44,12 @@ storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
 
 ## 🎙️ Project-specific additions (in progress)
 
-- Local LLM using Ollama + qwen2.5:14b-instruct (GPU : NVIDIA 3090 24GB)
-- Local Whisper STT server integration (faster-whisper, self-hosted)
-- Local Piper TTS server integration (self-hosted)
-- Voice pipeline: mic capture → STT → agent → TTS → speaker playback
-- AXP2101 power management (battery %, charge status, power button —
-  scoped, not yet implemented; see `BACKLOG.md`)
+[x] Local LLM using Ollama + qwen2.5:14b-instruct
+[ ] Voice pipeline: mic capture → STT → agent → TTS → speaker playback
+	[ ] Local Whisper STT server integration (faster-whisper, self-hosted)
+	[ ] Local Piper TTS server integration (self-hosted)
+[ ] AXP2101 power management
+[ ] User Interface to engage with the agent
 
 ## Upstream tracking
 
