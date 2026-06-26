@@ -14,9 +14,8 @@
 
 </div>
 
-This is a personal project of [espressif/esp-claw](https://github.com/espressif/esp-claw), configured and extended for the
-**Waveshare ESP32-S3-Touch-AMOLED-1.75** board (466×466 round AMOLED touch
-display, ES8311 DAC + ES7210 dual-mic ADC, SD card via SPI).
+This is a personal project of [espressif/esp-claw](https://github.com/espressif/esp-claw), configured for the
+**Waveshare ESP32-S3-Touch-AMOLED-1.75** board. I have yet to come up with a name for my project, but it's a fun little hobby.
 
 ESP-Claw itself is Espressif's open-source AI agent framework for ESP32-series
 chips — for the full feature overview, demo videos, supported LLM/IM
@@ -27,29 +26,47 @@ content; everything below is specific to this board and this project.
 
 ---
 
-## 🔧 Board port
+## 🔧 Board status
 
-Full board port at [`application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/`](./application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/).
+Board configuration located at [`application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/`](./application/edge_agent/boards/waveshare/waveshare_esp32_s3_touch_amoled_175/).
 
-Confirmed working: display (CO5300 QSPI AMOLED), touch (CST9217), audio
-(ES8311 DAC + ES7210 dual-mic ADC, full duplex), boot button, and SD card
-storage (~2GB usable, see known limitation in `ARCHITECTURE_AND_PLAN.md`).
+Hardware / Resources 
+- [x] 1.75" capacitive touch high-definition AMOLED display
+	- [x] Display conttroller : CO5300
+	- [x] I2C-based capacitive touch : CST9217
+- [x] Audio (full duplex)
+	- [x] DAC : ES8311
+	- [x] ADC : ES7210
+- [x] TF Card Slot
+- [ ] Power Management : AXP2101
+
+
+[x] = Successful Initialization / Implementation
+[ ] = Not Attempted / Not Successful
+
+I have achieved a clean boot up with the standard **esp-claw/edge agent** application except having to disable the **emote** display, using my configuration on multiple Waveshare ESP32-S3-TOUCH-AMOLED-1.75" development boards.
+The **emote** display is not the display I wish to have for my project. I intend to solve the boot loop it causes, but it's low priority.
 
 ## 📋 Project documentation
 
-- [`ARCHITECTURE_AND_PLAN.md`](./ARCHITECTURE_AND_PLAN.md) — current status,
-  confirmed-working subsystems, design decisions, and next steps.
-- [`BACKLOG.md`](./BACKLOG.md) — known issues, in-progress work, and
-  workflow notes (including some real gotchas hit during board bring-up).
+- [`ARCHITECTURE_AND_PLAN.md`](./ARCHITECTURE_AND_PLAN.md) — current status, confirmed-working subsystems, design decisions, and next steps.
+- [`BACKLOG.md`](./BACKLOG.md) — known issues, in-progress work, and workflow notes.
 
-## 🎙️ Project-specific additions (in progress)
+## 🎙️ Project-specific features
 
-- [x] Local LLM using Ollama + qwen2.5:14b-instruct
+- [x] Local Large Language Model using Ollama + qwen2.5:14b-instruct
 - [ ] Voice pipeline: mic capture → STT → agent → TTS → speaker playback
-	- [ ] Local Whisper STT server integration (faster-whisper, self-hosted)
-	- [ ] Local Piper TTS server integration (self-hosted)
-- [ ] AXP2101 power management
-- [ ] User Interface to engage with the agent
+	- [x] Local Whisper STT server integration (faster-whisper, self-hosted)
+	- [x] Local Piper TTS server integration (self-hosted)
+	- [ ] End-to-end orchestration / workflow
+- [ ] User Interface
+- [ ] Case / Housing (via 3D printing)
+	- [ ] Model creation
+	- [ ] Model printed
+
+
+[x] = Implemented 
+[ ] = Not Implemented
 
 ## Upstream tracking
 
