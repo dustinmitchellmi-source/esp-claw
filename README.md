@@ -57,8 +57,8 @@ The **emote** display is not the display I wish to have for my project. I intend
 	- [ ] End-to-end orchestration / workflow
 - [ ] User Interface
 - [ ] Case / Housing (via 3D printing)
-	- [ ] Model creation
-	- [ ] Model printed
+	- [ ] Design
+	- [ ] Printed
 
 ## Upstream tracking
 
