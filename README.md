@@ -32,7 +32,7 @@ Board configuration located at [`application/edge_agent/boards/waveshare/wavesha
 
 Hardware / Resources 
 - [x] 1.75" capacitive touch high-definition AMOLED display
-	- [x] Display conttroller : CO5300
+	- [x] Display controller : CO5300
 	- [x] I2C-based capacitive touch : CST9217
 - [x] Audio (full duplex)
 	- [x] DAC : ES8311
