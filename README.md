@@ -41,8 +41,8 @@ Hardware / Resources
 - [ ] Power Management : AXP2101
 
 
--[x] = Successful Initialization / Implementation
--[ ] = Not Attempted / Not Successful
+- [x] = Successful Initialization / Implementation
+- [ ] = Not Attempted / Not Successful
 
 I have achieved a clean boot sequence with the standard **esp-claw/edge agent** application, except having to disable the **emote** display, on multiple Waveshare ESP32-S3-TOUCH-AMOLED-1.75" development boards.
 The **emote** display is not the display I wish to have for my project. I intend to solve the boot loop it causes, but it's low priority.
@@ -65,8 +65,8 @@ The **emote** display is not the display I wish to have for my project. I intend
 	- [ ] Model printed
 
 
--[x] = Implemented 
--[ ] = Not Implemented
+- [x] = Implemented 
+- [ ] = Not Implemented
 
 ## Upstream tracking
 
